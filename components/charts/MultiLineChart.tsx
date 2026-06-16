@@ -30,33 +30,32 @@ export function MultiLineChart({ title, height = 400 }: MultiLineChartProps) {
       ? data.data.value.geography_segment_matrix
       : data.data.volume.geography_segment_matrix
 
-    const filtered = filterData(dataset, filters)
+    const advancedSegments = filters.advancedSegments || []
+    const isGeographyMode = filters.viewMode === 'geography-mode'
+    const hasSegmentsForCurrentType = advancedSegments.filter(
+      (seg: any) => seg.type === filters.segmentType
+    ).length > 0 || (filters.segments && filters.segments.length > 0)
 
     // Determine effective aggregation level for chart preparation
-    // When no segments are selected for the current segment type, default to Level 2
-    let effectiveAggregationLevel = filters.aggregationLevel
+    let effectiveAggregationLevel = filters.aggregationLevel ?? null
     if (effectiveAggregationLevel === null || effectiveAggregationLevel === undefined) {
-      const advancedSegments = filters.advancedSegments || []
-      const segmentsFromSameType = advancedSegments.filter(
-        (seg: any) => seg.type === filters.segmentType
-      )
-      const hasSegmentsForCurrentType = segmentsFromSameType.length > 0
-
       if (!hasSegmentsForCurrentType) {
-        // No segments selected - use Level 2 to show parent segments aggregated
         effectiveAggregationLevel = 2
+      } else if (!isGeographyMode) {
+        effectiveAggregationLevel = null
       }
     }
+
+    const modifiedFilters = { ...filters, aggregationLevel: effectiveAggregationLevel }
+    const filtered = filterData(dataset, modifiedFilters)
 
     // Extract "By Region" records for proportional geography distribution
     const byRegionRecords = dataset.filter(r => r.segment_type === 'By Region')
     const geographyCountries = data.dimensions.geographies.countries
 
-    // Use prepareLineChartData when we have an effective aggregation level
-    // This ensures parent segments are shown instead of sub-segments when no segment is selected
-    const prepared = effectiveAggregationLevel !== null
-      ? prepareLineChartData(filtered, filters, byRegionRecords, geographyCountries)
-      : prepareIntelligentMultiLevelData(filtered, filters, byRegionRecords, geographyCountries)
+    const prepared = isGeographyMode || effectiveAggregationLevel !== null
+      ? prepareLineChartData(filtered, modifiedFilters, byRegionRecords, geographyCountries)
+      : prepareIntelligentMultiLevelData(filtered, modifiedFilters, byRegionRecords, geographyCountries)
 
     // Extract series from prepared data keys instead of from filtered records
     // This ensures we use the aggregated keys (e.g., "Parenteral") not the original segment names
@@ -79,8 +78,6 @@ export function MultiLineChart({ title, height = 400 }: MultiLineChartProps) {
     // Determine series based on view mode and selections
     let series: string[] = []
 
-    // FIRST: Check for regional segment types - these need special handling regardless of view mode
-    const advancedSegments = filters.advancedSegments || []
     const isRegionalSegmentType = filters.segmentType === 'By Region' ||
                                   filters.segmentType === 'By State' ||
                                   filters.segmentType === 'By Country'
@@ -101,13 +98,14 @@ export function MultiLineChart({ title, height = 400 }: MultiLineChartProps) {
       // For segment mode with Level 2 aggregation, extract keys from prepared data
       series = extractSeriesFromPreparedData()
     } else if (filters.viewMode === 'geography-mode') {
-      // When multiple segments are selected, each line represents a geography
-      // Use selected geographies when Global data is used as fallback
-      const hasOnlyGlobalRecords = filtered.every(r => r.geography === 'Global')
-      const hasNonGlobalSelection = filters.geographies.some(g => g !== 'Global')
-      series = (hasOnlyGlobalRecords && hasNonGlobalSelection && !filters.geographies.includes('Global'))
-        ? filters.geographies.filter(g => g !== 'Global')
-        : getUniqueGeographies(filtered)
+      series = extractSeriesFromPreparedData()
+      if (series.length === 0) {
+        const hasOnlyGlobalRecords = filtered.every(r => r.geography === 'Global')
+        const hasNonGlobalSelection = filters.geographies.some(g => g !== 'Global')
+        series = (hasOnlyGlobalRecords && hasNonGlobalSelection && !filters.geographies.includes('Global'))
+          ? filters.geographies.filter(g => g !== 'Global')
+          : getUniqueGeographies(filtered)
+      }
     } else if (filters.viewMode === 'matrix') {
       // Matrix view - combine geography and segment
       const uniquePairs = new Set<string>()

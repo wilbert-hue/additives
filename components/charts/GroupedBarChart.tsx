@@ -12,7 +12,7 @@ import {
   ResponsiveContainer
 } from 'recharts'
 import { CHART_THEME, getChartColor, CHART_COLORS } from '@/lib/chart-theme'
-import { filterData, prepareGroupedBarData, prepareIntelligentMultiLevelData, getUniqueGeographies, getUniqueSegments, getGeographyProportions } from '@/lib/data-processor'
+import { filterData, prepareGroupedBarData, prepareIntelligentMultiLevelData, getUniqueGeographies, getUniqueSegments, getGeographyProportions, getSelectedSegmentsFromFilters } from '@/lib/data-processor'
 import { useDashboardStore } from '@/lib/store'
 import type { DataRecord } from '@/lib/types'
 
@@ -35,33 +35,32 @@ export function GroupedBarChart({ title, height = 400 }: GroupedBarChartProps) {
 
     // IMPORTANT: Determine effective aggregation level BEFORE filtering
     // This ensures filterData uses the correct logic based on user's segment selection
-    const advancedSegments = filters.advancedSegments || []
-    const segmentsFromSameType = advancedSegments.filter(
-      (seg: any) => seg.type === filters.segmentType
-    )
-    const hasUserSelectedSegments = segmentsFromSameType.length > 0
+    const selectedSegmentNames = getSelectedSegmentsFromFilters(filters)
+    const hasUserSelectedSegments = selectedSegmentNames.length > 0
 
     // Determine effective aggregation level for BOTH filtering and chart preparation
     // When user selects a parent segment (like "Parenteral"), we want to show its children
     // (Intravenous, Intramuscular, Subcutaneous) as separate bars, NOT aggregate them
     let effectiveAggregationLevel: number | null = filters.aggregationLevel ?? null
 
-    // CRITICAL: When user has explicitly selected segments, ALWAYS use null
-    // This prevents any Level 2 aggregation and shows individual sub-segments
-    if (hasUserSelectedSegments) {
-      // User selected segments - show individual records (children of selected parents)
+    // When user selected parent segments in segment-mode, show drill-down (null aggregation).
+    // Geography-mode always uses prepareGroupedBarData for proper stacked geo::segment keys.
+    const isGeographyMode = filters.viewMode === 'geography-mode'
+
+    if (hasUserSelectedSegments && !isGeographyMode) {
+      // User selected segments in segment-mode - show individual records (children of selected parents)
       effectiveAggregationLevel = null
     } else if (effectiveAggregationLevel === null) {
       // No segments selected - use Level 2 to show parent segments aggregated
-      effectiveAggregationLevel = 2
+      effectiveAggregationLevel = isGeographyMode ? null : 2
     }
 
     console.log('📊 Chart Data Debug:', {
       totalDataset: dataset.length,
       hasUserSelectedSegments,
       effectiveAggregationLevel,
-      segmentsFromSameType: segmentsFromSameType.map((s: any) => s.segment),
-      advancedSegments: advancedSegments.map((s: any) => ({ type: s.type, segment: s.segment })),
+      segmentsFromSameType: selectedSegmentNames,
+      advancedSegments: (filters.advancedSegments || []).map((s: any) => ({ type: s.type, segment: s.segment })),
       filtersSegmentType: filters.segmentType,
       filtersAggregationLevel: filters.aggregationLevel,
       willCallFunction: effectiveAggregationLevel !== null ? 'prepareGroupedBarData' : 'prepareIntelligentMultiLevelData'
@@ -101,7 +100,7 @@ export function GroupedBarChart({ title, height = 400 }: GroupedBarChartProps) {
       effectiveAggregationLevel,
       allSegmentNames,
       hasUserSelectedSegments,
-      selectedSegments: segmentsFromSameType.map((s: any) => s.segment),
+      selectedSegments: selectedSegmentNames,
       sampleFiltered: filtered.slice(0, 10).map(r => ({
         segment: r.segment,
         is_aggregated: r.is_aggregated,
@@ -113,8 +112,8 @@ export function GroupedBarChart({ title, height = 400 }: GroupedBarChartProps) {
 
     // CRITICAL: Verify that when user selected a parent segment, we got the child records
     // If we only have the parent segment in filtered data, something went wrong in filtering
-    if (hasUserSelectedSegments && segmentsFromSameType.length === 1) {
-      const selectedSegment = segmentsFromSameType[0].segment
+    if (hasUserSelectedSegments && selectedSegmentNames.length === 1) {
+      const selectedSegment = selectedSegmentNames[0]
       // Check if filtered data contains the selected segment directly (bad) or its children (good)
       const hasParentInData = allSegmentNames.includes(selectedSegment)
       const hasOnlyParent = hasParentInData && allSegmentNames.length === 1
@@ -129,10 +128,8 @@ export function GroupedBarChart({ title, height = 400 }: GroupedBarChartProps) {
     const byRegionRecords = dataset.filter(r => r.segment_type === 'By Region')
     const geographyCountries = data.dimensions.geographies.countries
 
-    // Prepare chart data
-    // Use prepareGroupedBarData when we have an effective aggregation level (handles Level 2 aggregation)
-    // This ensures parent segments are shown instead of sub-segments when no segment is selected
-    const prepared = effectiveAggregationLevel !== null
+    // Geography-mode and user-selected segments both use prepareGroupedBarData
+    const prepared = isGeographyMode || hasUserSelectedSegments || effectiveAggregationLevel !== null
       ? prepareGroupedBarData(filtered, modifiedFilters, byRegionRecords, geographyCountries)
       : prepareIntelligentMultiLevelData(filtered, modifiedFilters, byRegionRecords, geographyCountries)
 
@@ -151,7 +148,7 @@ export function GroupedBarChart({ title, height = 400 }: GroupedBarChartProps) {
       effectiveAggregationLevel,
       hasUserSelectedSegments,
       advancedSegments: filters.advancedSegments,
-      usingFunction: effectiveAggregationLevel !== null ? 'prepareGroupedBarData' : 'prepareIntelligentMultiLevelData'
+      usingFunction: isGeographyMode || hasUserSelectedSegments || effectiveAggregationLevel !== null ? 'prepareGroupedBarData' : 'prepareIntelligentMultiLevelData'
     })
 
     // Check if prepared data uses stacked keys (contains "::")
@@ -193,8 +190,21 @@ export function GroupedBarChart({ title, height = 400 }: GroupedBarChartProps) {
     }
 
     if (isStacked) {
-      // For stacked bars, we need to identify primary and secondary dimensions
-      if (filters.viewMode === 'segment-mode') {
+      // When prepared data already has stacked keys, use them directly
+      if (hasStackedKeys) {
+        series = extractSeriesFromPreparedData()
+        const primaryKeys = new Set<string>()
+        const secondaryKeys = new Set<string>()
+        series.forEach(key => {
+          const [primary, secondary] = key.split('::')
+          if (primary) primaryKeys.add(primary)
+          if (secondary) secondaryKeys.add(secondary)
+        })
+        stackedSeries = {
+          primary: Array.from(primaryKeys),
+          secondary: Array.from(secondaryKeys)
+        }
+      } else if (filters.viewMode === 'segment-mode') {
         // Primary: segments (bar groups), Secondary: geographies (stacks)
         const uniqueSegments = getUniqueSegments(filtered)
         const hasOnlyGlobalRecordsSeg = filtered.every(r => r.geography === 'Global')
@@ -241,6 +251,7 @@ export function GroupedBarChart({ title, height = 400 }: GroupedBarChartProps) {
       }
     } else {
       // Non-stacked: Get series from prepared data to ensure we use aggregated keys
+      const advancedSegments = filters.advancedSegments || []
       // FIRST: Check for regional segment types - these need special handling regardless of view mode
       const isRegionalSegmentType = filters.segmentType === 'By Region' ||
                                     filters.segmentType === 'By State' ||
@@ -296,7 +307,7 @@ export function GroupedBarChart({ title, height = 400 }: GroupedBarChartProps) {
     return { data: prepared, series, stackedSeries, isStacked }
   }, [data, filters])
 
-  if (!data || chartData.data.length === 0) {
+  if (!data || chartData.data.length === 0 || chartData.series.length === 0) {
     return (
       <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg">
         <div className="text-center">

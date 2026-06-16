@@ -13,42 +13,112 @@ const regions = {
   "Middle East & Africa": ["GCC", "South Africa", "Rest of Middle East & Africa"]
 };
 
-// New segment definitions with market share splits (proportions within each segment type)
+// Segment definitions — hierarchical (parent > children) or flat (leaf shares)
 const segmentTypes = {
-  "By Type": {
-    "Sub-Normothermic Perfusion (20–34°C)": 0.55,
-    "Warm or Normothermic Perfusion (35–37°C)": 0.45
+  "By Product Type": {
+    type: "hierarchical",
+    parentShares: {
+      "Dispersants": 0.20,
+      "Detergents": 0.25,
+      "Anti-wear Additives": 0.22,
+      "Friction Modifiers": 0.18,
+      "Antioxidants": 0.15
+    },
+    hierarchy: {
+      "Dispersants": {
+        "Polyisobutylene Succinimides (PIBSI)": 0.55,
+        "Mannich Dispersants": 0.45
+      },
+      "Detergents": {
+        "Calcium-based": 0.35,
+        "Magnesium-based": 0.30,
+        "Sodium-based": 0.35
+      },
+      "Anti-wear Additives": {
+        "Zinc Dialkyldithiophosphate (ZDDP)": 0.65,
+        "Phosphorus-based": 0.35
+      },
+      "Friction Modifiers": {
+        "Organic Friction Modifiers": 0.60,
+        "Molybdenum-based": 0.40
+      },
+      "Antioxidants": {
+        "Aminic": 0.55,
+        "Phenolic": 0.45
+      }
+    }
   },
-  "By Organ Type": {
-    "Liver": 0.35,
-    "Heart": 0.22,
-    "Lung": 0.18,
-    "Kidney": 0.15,
-    "Others (Pancreas, Small bowel / Intestine, Composite Tissues / Limb Perfusion (emerging use cases))": 0.10
+  "By Application": {
+    type: "hierarchical",
+    parentShares: {
+      "Automotive Application": 0.45,
+      "Industrial Application": 0.30
+    },
+    hierarchy: {
+      "Automotive Application": {
+        "Passenger Vehicle Engine Oil (PVEO)": 0.35,
+        "Heavy Duty Engine Oil (HDEO)": 0.25,
+        "Transmission Fluid": 0.20,
+        "Gear Oil": 0.12,
+        "Brake Fluid": 0.08
+      },
+      "Industrial Application": {
+        "Hydraulic Fluids": 0.25,
+        "Industrial Gear Oils": 0.25,
+        "Compressor Oils": 0.20,
+        "Turbine Oils": 0.15,
+        "Metalworking Fluids": 0.15
+      }
+    },
+    flat: {
+      "Marine Lubricants": 0.10,
+      "Aviation Lubricants": 0.08,
+      "Railway Lubricants": 0.07
+    }
   },
-  "Application / Use Case": {
-    "Organ Preservation": 0.30,
-    "Viability Assessment": 0.25,
-    "Physiologic Transport": 0.20,
-    "Reconditioning Marginal Organs": 0.15,
-    "Others (Research Use / Protocol development)": 0.10
+  "By Function": {
+    type: "flat",
+    segments: {
+      "Wear Protection": 0.22,
+      "Deposit Control": 0.18,
+      "Oxidation Stability": 0.16,
+      "Friction Reduction": 0.14,
+      "Corrosion Protection": 0.12,
+      "Viscosity Modification": 0.10,
+      "Others": 0.08
+    }
   },
-  "By End User": {
-    "Hospitals & Clinics": 0.40,
-    "Specialty Clinic/Centers": 0.25,
-    "Transplant Centers": 0.25,
-    "Others (Research Institutes/Centers, Organ Procurement Organizations, etc.)": 0.10
+  "By Lubricant Type": {
+    type: "flat",
+    segments: {
+      "Engine Oils": 0.28,
+      "Hydraulic Fluids": 0.18,
+      "Gear Oils": 0.15,
+      "Metalworking Fluids": 0.14,
+      "Greases": 0.12,
+      "Compressor Oils": 0.08,
+      "Others": 0.05
+    }
+  },
+  "By Base Oil Type": {
+    type: "flat",
+    segments: {
+      "Mineral Oil": 0.45,
+      "Synthetic Oil": 0.28,
+      "Semi-Synthetic Oil": 0.18,
+      "Bio-Based Oil": 0.09
+    }
   }
 };
 
 // Regional base values (USD Million) for 2021 - total market per region
-// Global Normothermic Machine Perfusion market ~$300M in 2021, growing ~12% CAGR
+// Global lubricant additives market ~$14B in 2021
 const regionBaseValues = {
-  "North America": 120,
-  "Europe": 90,
-  "Asia Pacific": 50,
-  "Latin America": 20,
-  "Middle East & Africa": 15
+  "North America": 4500,
+  "Europe": 3800,
+  "Asia Pacific": 4200,
+  "Latin America": 800,
+  "Middle East & Africa": 600
 };
 
 // Country share within region (must sum to ~1.0)
@@ -60,45 +130,61 @@ const countryShares = {
   "Middle East & Africa": { "GCC": 0.45, "South Africa": 0.25, "Rest of Middle East & Africa": 0.30 }
 };
 
-// Growth rates (CAGR) per region - slightly different for variety
+// Growth rates (CAGR) per region
 const regionGrowthRates = {
-  "North America": 0.115,
-  "Europe": 0.108,
-  "Asia Pacific": 0.145,
-  "Latin America": 0.125,
-  "Middle East & Africa": 0.118
+  "North America": 0.042,
+  "Europe": 0.038,
+  "Asia Pacific": 0.055,
+  "Latin America": 0.048,
+  "Middle East & Africa": 0.045
 };
 
 // Segment-specific growth multipliers (relative to regional base CAGR)
 const segmentGrowthMultipliers = {
-  "By Type": {
-    "Sub-Normothermic Perfusion (20–34°C)": 0.95,
-    "Warm or Normothermic Perfusion (35–37°C)": 1.07
-  },
-  "By Organ Type": {
-    "Liver": 1.08,
-    "Heart": 1.05,
-    "Lung": 1.12,
-    "Kidney": 0.95,
-    "Others (Pancreas, Small bowel / Intestine, Composite Tissues / Limb Perfusion (emerging use cases))": 1.20
-  },
-  "Application / Use Case": {
-    "Organ Preservation": 0.92,
-    "Viability Assessment": 1.15,
-    "Physiologic Transport": 1.05,
-    "Reconditioning Marginal Organs": 1.18,
-    "Others (Research Use / Protocol development)": 1.10
-  },
-  "By End User": {
-    "Hospitals & Clinics": 0.98,
-    "Specialty Clinic/Centers": 1.10,
-    "Transplant Centers": 1.08,
-    "Others (Research Institutes/Centers, Organ Procurement Organizations, etc.)": 1.05
-  }
+  "Polyisobutylene Succinimides (PIBSI)": 1.05,
+  "Mannich Dispersants": 1.08,
+  "Calcium-based": 0.98,
+  "Magnesium-based": 1.02,
+  "Sodium-based": 1.06,
+  "Zinc Dialkyldithiophosphate (ZDDP)": 0.95,
+  "Phosphorus-based": 1.10,
+  "Organic Friction Modifiers": 1.08,
+  "Molybdenum-based": 1.04,
+  "Aminic": 1.03,
+  "Phenolic": 1.06,
+  "Passenger Vehicle Engine Oil (PVEO)": 1.02,
+  "Heavy Duty Engine Oil (HDEO)": 1.05,
+  "Transmission Fluid": 1.04,
+  "Gear Oil": 0.98,
+  "Brake Fluid": 1.08,
+  "Hydraulic Fluids": 1.06,
+  "Industrial Gear Oils": 1.03,
+  "Compressor Oils": 1.05,
+  "Turbine Oils": 1.07,
+  "Metalworking Fluids": 1.04,
+  "Marine Lubricants": 1.02,
+  "Aviation Lubricants": 1.10,
+  "Railway Lubricants": 1.06,
+  "Wear Protection": 1.02,
+  "Deposit Control": 1.05,
+  "Oxidation Stability": 1.04,
+  "Friction Reduction": 1.08,
+  "Corrosion Protection": 1.03,
+  "Viscosity Modification": 1.06,
+  "Others": 1.01,
+  "Engine Oils": 1.02,
+  "Hydraulic Fluids": 1.05,
+  "Gear Oils": 0.98,
+  "Greases": 1.04,
+  "Compressor Oils": 1.06,
+  "Mineral Oil": 0.95,
+  "Synthetic Oil": 1.10,
+  "Semi-Synthetic Oil": 1.08,
+  "Bio-Based Oil": 1.15
 };
 
-// Volume multiplier: units per USD Million (rough: ~500 units per $1M for perfusion devices)
-const volumePerMillionUSD = 480;
+// Volume multiplier: kilotons per USD Million
+const volumePerMillionUSD = 0.85;
 
 // Seeded pseudo-random for reproducibility
 let seed = 42;
@@ -129,32 +215,103 @@ function generateTimeSeries(baseValue, growthRate, roundFn) {
   return series;
 }
 
+function getGrowthMultiplier(segmentName) {
+  return segmentGrowthMultipliers[segmentName] || 1.0;
+}
+
+function buildSegmentTypeData(segTypeConfig, baseValue, regionGrowth, roundFn) {
+  const result = {};
+
+  if (segTypeConfig.type === 'flat') {
+    for (const [segName, share] of Object.entries(segTypeConfig.segments)) {
+      const segGrowth = regionGrowth * getGrowthMultiplier(segName);
+      const segBase = baseValue * share;
+      result[segName] = generateTimeSeries(segBase, segGrowth, roundFn);
+    }
+    return result;
+  }
+
+  // Hierarchical: parent > children (leaf nodes get time series data)
+  for (const [parentName, parentShare] of Object.entries(segTypeConfig.parentShares)) {
+    result[parentName] = {};
+    const children = segTypeConfig.hierarchy[parentName];
+    for (const [childName, childShare] of Object.entries(children)) {
+      const segGrowth = regionGrowth * getGrowthMultiplier(childName);
+      const segBase = baseValue * parentShare * childShare;
+      const shareVariation = 1 + (seededRandom() - 0.5) * 0.08;
+      result[parentName][childName] = generateTimeSeries(segBase * shareVariation, segGrowth, roundFn);
+    }
+  }
+
+  // Flat siblings at the same level as hierarchical parents
+  if (segTypeConfig.flat) {
+    for (const [segName, share] of Object.entries(segTypeConfig.flat)) {
+      const segGrowth = regionGrowth * getGrowthMultiplier(segName);
+      const segBase = baseValue * share;
+      const shareVariation = 1 + (seededRandom() - 0.5) * 0.08;
+      result[segName] = generateTimeSeries(segBase * shareVariation, segGrowth, roundFn);
+    }
+  }
+
+  return result;
+}
+
+function buildSegmentationStructure() {
+  const structure = { Global: {} };
+
+  for (const [segTypeName, segTypeConfig] of Object.entries(segmentTypes)) {
+    if (segTypeConfig.type === 'flat') {
+      structure.Global[segTypeName] = {};
+      for (const segName of Object.keys(segTypeConfig.segments)) {
+        structure.Global[segTypeName][segName] = {};
+      }
+    } else {
+      structure.Global[segTypeName] = {};
+      for (const [parentName, children] of Object.entries(segTypeConfig.hierarchy)) {
+        structure.Global[segTypeName][parentName] = {};
+        for (const childName of Object.keys(children)) {
+          structure.Global[segTypeName][parentName][childName] = {};
+        }
+      }
+      if (segTypeConfig.flat) {
+        for (const segName of Object.keys(segTypeConfig.flat)) {
+          structure.Global[segTypeName][segName] = {};
+        }
+      }
+    }
+  }
+
+  // Geography hierarchy (By Region)
+  structure.Global["By Region"] = {};
+  for (const [regionName, countries] of Object.entries(regions)) {
+    structure.Global["By Region"][regionName] = {};
+    for (const country of countries) {
+      structure.Global["By Region"][regionName][country] = {};
+    }
+  }
+
+  return structure;
+}
+
 function generateData(isVolume) {
   const data = {};
   const roundFn = isVolume ? roundToInt : roundTo1;
   const multiplier = isVolume ? volumePerMillionUSD : 1;
 
-  // Generate data for each region and country
   for (const [regionName, countries] of Object.entries(regions)) {
     const regionBase = regionBaseValues[regionName] * multiplier;
     const regionGrowth = regionGrowthRates[regionName];
 
     // Region-level data
     data[regionName] = {};
-    for (const [segType, segments] of Object.entries(segmentTypes)) {
-      data[regionName][segType] = {};
-      for (const [segName, share] of Object.entries(segments)) {
-        const segGrowth = regionGrowth * segmentGrowthMultipliers[segType][segName];
-        const segBase = regionBase * share;
-        data[regionName][segType][segName] = generateTimeSeries(segBase, segGrowth, roundFn);
-      }
+    for (const [segTypeName, segTypeConfig] of Object.entries(segmentTypes)) {
+      data[regionName][segTypeName] = buildSegmentTypeData(segTypeConfig, regionBase, regionGrowth, roundFn);
     }
 
-    // Add "By Country" for each region
+    // By Country aggregation for each region
     data[regionName]["By Country"] = {};
     for (const country of countries) {
       const cShare = countryShares[regionName][country];
-      // Use a slight variation of region growth per country
       const countryGrowthVariation = 1 + (seededRandom() - 0.5) * 0.06;
       const countryBase = regionBase * cShare;
       const countryGrowth = regionGrowth * countryGrowthVariation;
@@ -169,15 +326,8 @@ function generateData(isVolume) {
       const countryGrowth = regionGrowth * countryGrowthVariation;
 
       data[country] = {};
-      for (const [segType, segments] of Object.entries(segmentTypes)) {
-        data[country][segType] = {};
-        for (const [segName, share] of Object.entries(segments)) {
-          const segGrowth = countryGrowth * segmentGrowthMultipliers[segType][segName];
-          const segBase = countryBase * share;
-          // Add slight country-specific variation to segment share
-          const shareVariation = 1 + (seededRandom() - 0.5) * 0.1;
-          data[country][segType][segName] = generateTimeSeries(segBase * shareVariation, segGrowth, roundFn);
-        }
+      for (const [segTypeName, segTypeConfig] of Object.entries(segmentTypes)) {
+        data[country][segTypeName] = buildSegmentTypeData(segTypeConfig, countryBase, countryGrowth, roundFn);
       }
     }
   }
@@ -191,13 +341,15 @@ const valueData = generateData(false);
 seed = 7777;
 const volumeData = generateData(true);
 
+const segmentationStructure = buildSegmentationStructure();
+
 // Write files
 const outDir = path.join(__dirname, 'public', 'data');
 fs.writeFileSync(path.join(outDir, 'value.json'), JSON.stringify(valueData, null, 2));
 fs.writeFileSync(path.join(outDir, 'volume.json'), JSON.stringify(volumeData, null, 2));
+fs.writeFileSync(path.join(outDir, 'segmentation_analysis.json'), JSON.stringify(segmentationStructure, null, 2));
 
-console.log('Generated value.json and volume.json successfully');
+console.log('Generated value.json, volume.json, and segmentation_analysis.json successfully');
 console.log('Value geographies:', Object.keys(valueData).length);
-console.log('Volume geographies:', Object.keys(volumeData).length);
-console.log('Segment types:', Object.keys(valueData['North America']));
-console.log('Sample - North America, By Type:', JSON.stringify(valueData['North America']['By Type'], null, 2));
+console.log('Segment types:', Object.keys(segmentationStructure.Global).join(', '));
+console.log('Sample - North America, By Product Type:', JSON.stringify(valueData['North America']['By Product Type'], null, 2));

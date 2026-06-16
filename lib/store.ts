@@ -162,6 +162,26 @@ function getDefaultOpportunityFilters(data: ComparisonData | null): FilterState 
   }
 }
 
+// Helper to rebuild advancedSegments from segments array
+function buildAdvancedSegments(
+  segmentType: string,
+  segments: string[],
+  existing?: Array<{ type: string; segment: string; id: string }>
+): Array<{ type: string; segment: string; id: string }> {
+  if (existing && existing.length > 0) {
+    return existing.map(item => ({
+      type: segmentType,
+      segment: item.segment,
+      id: `${segmentType}::${item.segment}`,
+    }))
+  }
+  return segments.map(segment => ({
+    type: segmentType,
+    segment,
+    id: `${segmentType}::${segment}`,
+  }))
+}
+
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
   data: null,
   filteredData: [],
@@ -270,11 +290,35 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         }
 
         console.log('🔧 Store: Switching to Volume - using segmentType:', targetSegmentType)
+
+        // Preserve segment selections — value and volume share the same segment structure
+        const preservedSegments = state.filters.segments || []
+        const preservedAdvanced = buildAdvancedSegments(
+          targetSegmentType,
+          preservedSegments,
+          (state.filters as any).advancedSegments
+        )
+
         newFilters = {
           ...newFilters,
           segmentType: targetSegmentType,
-          segments: [], // Clear segments when switching data type
-          advancedSegments: [], // Clear advanced segments to keep UI in sync
+          segments: preservedSegments,
+          advancedSegments: preservedAdvanced,
+        } as any
+      }
+
+      // When switching back to Value, preserve segment selections as well
+      if (newFilters.dataType === 'value' && state.filters.dataType !== 'value') {
+        const preservedSegments = state.filters.segments || []
+        const segmentType = newFilters.segmentType ?? state.filters.segmentType
+        newFilters = {
+          ...newFilters,
+          segments: preservedSegments,
+          advancedSegments: buildAdvancedSegments(
+            segmentType,
+            preservedSegments,
+            (state.filters as any).advancedSegments
+          ),
         } as any
       }
 

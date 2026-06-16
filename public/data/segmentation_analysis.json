@@ -1,28 +1,70 @@
 {
   "Global": {
-    "By Type": {
-      "Sub-Normothermic Perfusion (20–34°C)": {},
-      "Warm or Normothermic Perfusion (35–37°C)": {}
+    "By Product Type": {
+      "Dispersants": {
+        "Polyisobutylene Succinimides (PIBSI)": {},
+        "Mannich Dispersants": {}
+      },
+      "Detergents": {
+        "Calcium-based": {},
+        "Magnesium-based": {},
+        "Sodium-based": {}
+      },
+      "Anti-wear Additives": {
+        "Zinc Dialkyldithiophosphate (ZDDP)": {},
+        "Phosphorus-based": {}
+      },
+      "Friction Modifiers": {
+        "Organic Friction Modifiers": {},
+        "Molybdenum-based": {}
+      },
+      "Antioxidants": {
+        "Aminic": {},
+        "Phenolic": {}
+      }
     },
-    "By Organ Type": {
-      "Liver": {},
-      "Heart": {},
-      "Lung": {},
-      "Kidney": {},
-      "Others (Pancreas, Small bowel / Intestine, Composite Tissues / Limb Perfusion (emerging use cases))": {}
+    "By Application": {
+      "Automotive Application": {
+        "Passenger Vehicle Engine Oil (PVEO)": {},
+        "Heavy Duty Engine Oil (HDEO)": {},
+        "Transmission Fluid": {},
+        "Gear Oil": {},
+        "Brake Fluid": {}
+      },
+      "Industrial Application": {
+        "Hydraulic Fluids": {},
+        "Industrial Gear Oils": {},
+        "Compressor Oils": {},
+        "Turbine Oils": {},
+        "Metalworking Fluids": {}
+      },
+      "Marine Lubricants": {},
+      "Aviation Lubricants": {},
+      "Railway Lubricants": {}
     },
-    "Application / Use Case": {
-      "Organ Preservation": {},
-      "Viability Assessment": {},
-      "Physiologic Transport": {},
-      "Reconditioning Marginal Organs": {},
-      "Others (Research Use / Protocol development)": {}
+    "By Function": {
+      "Wear Protection": {},
+      "Deposit Control": {},
+      "Oxidation Stability": {},
+      "Friction Reduction": {},
+      "Corrosion Protection": {},
+      "Viscosity Modification": {},
+      "Others": {}
     },
-    "By End User": {
-      "Hospitals & Clinics": {},
-      "Specialty Clinic/Centers": {},
-      "Transplant Centers": {},
-      "Others (Research Institutes/Centers, Organ Procurement Organizations, etc.)": {}
+    "By Lubricant Type": {
+      "Engine Oils": {},
+      "Hydraulic Fluids": {},
+      "Gear Oils": {},
+      "Metalworking Fluids": {},
+      "Greases": {},
+      "Compressor Oils": {},
+      "Others": {}
+    },
+    "By Base Oil Type": {
+      "Mineral Oil": {},
+      "Synthetic Oil": {},
+      "Semi-Synthetic Oil": {},
+      "Bio-Based Oil": {}
     },
     "By Region": {
       "North America": {

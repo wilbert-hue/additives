@@ -18,36 +18,51 @@ interface SelectedSegmentItem {
 export function EnhancedFilterPanel() {
   const { data, filters, updateFilters } = useDashboardStore()
   const [selectedSegmentType, setSelectedSegmentType] = useState<string>(
-    filters.segmentType || (data?.dimensions?.segments ? Object.keys(data.dimensions.segments)[0] : 'By Technology')
+    filters.segmentType || (data?.dimensions?.segments ? Object.keys(data.dimensions.segments)[0] : 'By Product Type')
   )
   const [selectedSegments, setSelectedSegments] = useState<SelectedSegmentItem[]>([])
   const [currentSegmentSelection, setCurrentSegmentSelection] = useState<string>('')
   const [cascadePath, setCascadePath] = useState<string[]>([])
 
-  // Initialize selectedSegments from store filters when data loads
+  // Sync selectedSegments with store whenever segments, segment type, or data type changes
   useEffect(() => {
-    if (data && filters.segments && filters.segments.length > 0 && filters.segmentType) {
-      // Convert store segments to SelectedSegmentItem format
-      // Deduplicate segments to prevent duplicate keys
-      const seen = new Set<string>()
-      const segmentsFromStore: SelectedSegmentItem[] = []
-      
-      filters.segments.forEach((segment) => {
-        const id = `${filters.segmentType}::${segment}`
-        // Only add if we haven't seen this segment+type combination
-        if (!seen.has(id)) {
-          seen.add(id)
-          segmentsFromStore.push({
-            type: filters.segmentType,
-            segment: segment,
-            id: id
-          })
-        }
-      })
-      
-      setSelectedSegments(segmentsFromStore)
+    if (!data) return
+
+    if (!filters.segments || filters.segments.length === 0) {
+      setSelectedSegments([])
+      return
     }
-  }, [data, filters.segments, filters.segmentType])
+
+    if (!filters.segmentType) return
+
+    const seen = new Set<string>()
+    const segmentsFromStore: SelectedSegmentItem[] = []
+
+    filters.segments.forEach((segment) => {
+      const id = `${filters.segmentType}::${segment}`
+      if (!seen.has(id)) {
+        seen.add(id)
+        segmentsFromStore.push({
+          type: filters.segmentType,
+          segment: segment,
+          id: id
+        })
+      }
+    })
+
+    setSelectedSegments(segmentsFromStore)
+
+    // Keep advancedSegments in sync when restoring from store / switching data type
+    const currentAdvanced = filters.advancedSegments || []
+    const needsSync = currentAdvanced.length !== segmentsFromStore.length ||
+      segmentsFromStore.some(s => !currentAdvanced.some(a => a.id === s.id))
+
+    if (needsSync) {
+      updateFilters({
+        advancedSegments: segmentsFromStore,
+      } as any)
+    }
+  }, [data, filters.segments, filters.segmentType, filters.dataType, filters.advancedSegments, updateFilters])
 
   // Update when filters change
   useEffect(() => {
