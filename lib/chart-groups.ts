@@ -3,7 +3,7 @@
  * Defines the grouping of charts for different analytical perspectives
  */
 
-export type ChartGroupId = 'market-analysis' | 'coherent-opportunity'
+export type ChartGroupId = 'market-analysis' | 'WMR-opportunity'
 
 export interface ChartGroup {
   id: ChartGroupId
@@ -22,8 +22,8 @@ export const CHART_GROUPS: ChartGroup[] = [
     icon: '📊'
   },
   {
-    id: 'coherent-opportunity',
-    label: 'Coherent Opportunity Matrix',
+    id: 'WMR-opportunity',
+    label: 'WMR Opportunity Matrix',
     description: 'Opportunity identification and analysis',
     charts: ['bubble'],
     icon: '🎯'

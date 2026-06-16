@@ -43,8 +43,8 @@ export function Footer() {
                 <p className="text-white font-semibold mb-2">For Business Enquiry :</p>
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  <a href="mailto:sales@coherentmarketinsights.com" className="text-gray-300 hover:text-white">
-                    sales@coherentmarketinsights.com
+                  <a href="mailto:sales@WMR.com" className="text-gray-300 hover:text-white">
+                    sales@WMR.com
                   </a>
                 </div>
               </div>
@@ -54,7 +54,7 @@ export function Footer() {
                 <div className="flex items-start gap-2">
                   <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
                   <p className="text-gray-300 text-sm">
-                    Coherent Market Insights Pvt Ltd, 533 Airport Boulevard, Suite 400, Burlingame, CA 94010, United States
+                    WMR Pvt Ltd, 533 Airport Boulevard, Suite 400, Burlingame, CA 94010, United States
                   </p>
                 </div>
               </div>
@@ -64,7 +64,7 @@ export function Footer() {
                 <div className="flex items-start gap-2">
                   <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
                   <p className="text-gray-300 text-sm">
-                    Coherent Market Insights Pvt Ltd, 401-402, Bremen Business Center, University Road, Aundh, Pune - 411007, India.
+                    WMR Pvt Ltd, 401-402, Bremen Business Center, University Road, Aundh, Pune - 411007, India.
                   </p>
                 </div>
               </div>
@@ -173,7 +173,7 @@ export function Footer() {
           {/* Copyright */}
           <div className="mt-8 pt-6 border-t border-gray-700 text-center">
             <p className="text-gray-400 text-sm">
-              © 2025 Coherent Market Insights Pvt Ltd. All Rights Reserved.
+              © 2025 WMR Market Insights Pvt Ltd. All Rights Reserved.
             </p>
           </div>
         </div>

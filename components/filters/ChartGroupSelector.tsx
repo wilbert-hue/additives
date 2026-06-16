@@ -7,7 +7,7 @@ import { BarChart3, Target, type LucideIcon } from 'lucide-react'
 // Icon mapping for each chart group
 const iconMap: Record<ChartGroupId, LucideIcon> = {
   'market-analysis': BarChart3,
-  'coherent-opportunity': Target,
+  'WMR-opportunity': Target,
 }
 
 export function ChartGroupSelector() {
@@ -43,8 +43,8 @@ export function ChartGroupSelector() {
                 className={`w-3 h-3 flex-shrink-0 ${isSelected ? 'text-white' : 'text-black'}`} 
               />
               <span className="text-xs font-medium leading-tight">
-                {group.label === 'Coherent Opportunity Matrix' 
-                  ? <span>Coherent Opportunity<br/>Matrix</span>
+                {group.label === 'WMR Opportunity Matrix' 
+                  ? <span>WMR Opportunity<br/>Matrix</span>
                   : group.label}
               </span>
             </button>

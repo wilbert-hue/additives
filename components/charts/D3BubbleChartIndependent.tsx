@@ -230,8 +230,8 @@ export function D3BubbleChartIndependent({ title, height = 500 }: BubbleChartPro
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const [maxBubbles, setMaxBubbles] = useState(50) // Slider for bubble count
   
-  // Use opportunity filters when in coherent-opportunity mode, otherwise use regular filters
-  const isOpportunityMode = selectedChartGroup === 'coherent-opportunity'
+  // Use opportunity filters when in WMR-opportunity mode, otherwise use regular filters
+  const isOpportunityMode = selectedChartGroup === 'WMR-opportunity'
   const activeFilters = isOpportunityMode ? opportunityFilters : filters
   const updateActiveFilters = isOpportunityMode ? updateOpportunityFilters : updateFilters
   
