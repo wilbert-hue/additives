@@ -463,8 +463,10 @@ export function D3BubbleChartIndependent({ title, height = 500 }: BubbleChartPro
         cagrValue: dataset[0]?.cagr
       })
 
-      // Use filterData to apply all filters consistently with other charts
-      let filteredRecords = filterData(dataset, activeFilters)
+      // Use filterData to apply all filters consistently with other charts.
+      // skipAggregationLevelDefault=true: data only has year values at leaf nodes (e.g. Dispersants > PIBSI),
+      // so we skip the auto-level-2 default and let the opportunity matrix aggregate leaf records by level_1.
+      let filteredRecords = filterData(dataset, activeFilters, undefined, { skipAggregationLevelDefault: true })
 
       // Handle geography filtering for bubble chart
       // Check if data exists for selected geographies with the current segment type
@@ -788,7 +790,7 @@ export function D3BubbleChartIndependent({ title, height = 500 }: BubbleChartPro
         const uniqueAggregationLevels = [...new Set(dataset.map(r => r.aggregation_level).filter(l => l !== null && l !== undefined))]
         
         // Check what records exist after filterData
-        const afterFilterData = filterData(dataset, activeFilters)
+        const afterFilterData = filterData(dataset, activeFilters, undefined, { skipAggregationLevelDefault: true })
         
         const errorDetails = {
           datasetLength: dataset.length,

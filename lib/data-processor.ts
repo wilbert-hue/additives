@@ -214,7 +214,8 @@ export function determineAggregationLevel(
 export function filterData(
   data: DataRecord[],
   filters: FilterState & { advancedSegments?: any[] },
-  geographyCountries?: Record<string, string[]>
+  geographyCountries?: Record<string, string[]>,
+  options?: { skipAggregationLevelDefault?: boolean }
 ): DataRecord[] {
   // AUTOMATIC LEVEL DETECTION: Determine level based on selected segments
   // Hide aggregation level complexity from users
@@ -253,6 +254,10 @@ export function filterData(
       // These records typically have aggregation_level = 3 (not 2), so forcing level 2 would filter them out
       effectiveAggregationLevel = null
       console.log('🔍 filterData: Regional segment type', filters.segmentType, ', allowing all aggregation levels')
+    } else if (options?.skipAggregationLevelDefault) {
+      // Caller wants all records regardless of aggregation level (e.g. opportunity matrix does its own aggregation)
+      effectiveAggregationLevel = null
+      console.log('🔍 filterData: skipAggregationLevelDefault=true, allowing all aggregation levels')
     } else {
       // NO SEGMENTS SELECTED FOR THIS SEGMENT TYPE: Default to showing Level 1 segments only (aggregation_level 2)
       // This ensures we don't show sub-segments when no specific segments are chosen for this type
